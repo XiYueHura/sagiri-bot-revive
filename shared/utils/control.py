@@ -120,15 +120,20 @@ class Function(object):
 class Distribute(object):
     """用于控制负载均衡的类，不应被实例化"""
     @staticmethod
-    def distribute(require_admin: bool = False, show_log: bool = False) -> Depend:
+    def distribute(require_admin: bool = False, only_exclusion_bot: bool = False, show_log: bool = False) -> Depend:
         async def judge(ctx: Context, message: Message):
             base_account = ctx.account
             land = base_account.route["land"]
             account = base_account.route["account"]
-
-            # TODO: 添加bot冲突检测，检测已加载account
-
             distribute_data = it(DistributeData)
+
+            if await distribute_data.is_bot(base_account, message):
+                logger.debug(f"get bot message {message.content} from {message.sender}")
+                raise ExecutionStop()
+
+            if only_exclusion_bot:
+                return
+
             if not distribute_data.account_initialized(account):
                 _ = await distribute_data.add_account(base_account)
                 if show_log:

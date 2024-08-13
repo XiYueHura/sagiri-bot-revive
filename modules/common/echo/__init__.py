@@ -12,6 +12,7 @@ channel.meta = meta.to_saya_meta()
 
 DEFAULT_ECHO = "Hello World by SAGIRI-BOT V5.0.0 powered by Avilla"
 
+
 @listen(MessageReceived)
 @decorate(Distribute.distribute())
 @decorate(SceneSwitch.check())

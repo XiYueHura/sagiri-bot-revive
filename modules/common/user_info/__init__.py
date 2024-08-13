@@ -26,9 +26,9 @@ async def user_info(ctx: Context, message: Message, qq: MessageChain = ResultVal
     await ctx.scene.send_message(
         Picture(RawResource(
             await template2img(
-                (Path(__file__).parent / "template2.html").read_text(), 
+                (Path(__file__).parent / "template2.html").read_text(encoding="utf-8"),
                 {"img_url": f"https://q1.qlogo.cn/g?b=qq&nk={qid}&s=640"},
-                extra_page_option=PageOption(viewport={'width': 1000, 'height': 600})
+                extra_screenshot_option=PageOption(viewport={'width': 1000, 'height': 600})
             )
         ))
     )

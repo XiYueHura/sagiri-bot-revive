@@ -1,3 +1,4 @@
+from yarl import URL
 from pathlib import Path
 from loguru import logger
 from typing import Type, Any
@@ -12,8 +13,10 @@ from graia.broadcast import Broadcast
 from graia.scheduler import GraiaScheduler
 from graiax.playwright import PlaywrightService
 from graia.scheduler.saya import GraiaSchedulerBehaviour
+from graia.amnesia.builtins.asgi import UvicornASGIService
 from graia.saya.builtins.broadcast import BroadcastBehaviour
 from avilla.elizabeth.protocol import ElizabethProtocol, ElizabethConfig
+from avilla.onebot.v11.protocol import OneBot11Protocol, OneBot11ForwardConfig
 
 from shared.utils.modules import load_modules
 from shared.models.config import GlobalConfig
@@ -32,6 +35,12 @@ PROTOCOL_DICT = {
         "config": ElizabethConfig,
         "types": [int, str, int, str],
         "attributes": ["qq", "host", "port", "access_token"]
+    },
+    "onebot_v11": {
+        "protocol": OneBot11Protocol,
+        "config": OneBot11ForwardConfig,
+        "types": [URL, str],
+        "attributes": ["endpoint", "access_token"]
     }
 }
 launart = Launart()
@@ -80,7 +89,7 @@ def init_services():
 
 def init_avilla():
     config = create(GlobalConfig)
-    avilla = Avilla(broadcast=it(Broadcast), launch_manager=launart)
+    avilla = Avilla(broadcast=it(Broadcast), launch_manager=launart, record_send=False)
     for protocal in config.protocols:
         if not (p := PROTOCOL_DICT.get(protocal)):
             logger.warning(f"当前暂不支持{protocal}协议，自动跳过")

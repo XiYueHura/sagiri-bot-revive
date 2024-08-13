@@ -9,9 +9,11 @@ from creart.creator import AbstractCreator, CreateTargetInfo
 
 from shared.utils.models import selector2pattern
 from shared.utils.string import string_to_unique_number
+
 scene_dict = {
     "qq": "group"
 }
+
 
 class DistributeData:
     """
@@ -29,7 +31,7 @@ class DistributeData:
         self.data = {}
         self.inited_account = set()
         self.lock = Lock()
-    
+
     async def add_account(self, base_account: BaseAccount):
         land = base_account.route["land"]
         account = base_account.route["account"]
@@ -46,26 +48,27 @@ class DistributeData:
                     self.data[land][scene] = [account]
         self.inited_account.add(account)
         logger.success(f"DistributeData 成功添加账号{account}<{land}>")
-    
+
     async def add_land(self, land: str):
-        if land not in self.data:
-            async with self.lock:
+        async with self.lock:
+            if land not in self.data:
                 self.data[land] = {}
-    
-    async def add_scene(self, scene: Selector | str, land: str, account: str):
+
+    async def add_scene(self, scene: Selector | str, land: str, account: str | None):
         if isinstance(scene, Selector):
             scene = selector2pattern(scene)
         _ = await self.add_land(land)
-        if scene not in self.data[land]:
-            self.data[land][scene] = [account]
-    
+        async with self.lock:
+            if scene not in self.data[land]:
+                self.data[land][scene] = [account] if account else []
+
     def need_distribute(self, land: str, scene: Selector | str) -> bool:
         if isinstance(scene, Selector):
             scene = selector2pattern(scene)
         if land in self.data and scene in self.data[land]:
             return len(self.data[land][scene]) > 1
         return False
-    
+
     def get_index(self, base_account: BaseAccount, scene: Selector | str) -> int:
         land = base_account.route["land"]
         account = base_account.route["account"]
@@ -74,25 +77,35 @@ class DistributeData:
             return self.data[land][scene].index(account)
         print(self.data)
         raise ValueError
-    
+
     def account_initialized(self, account: str):
         return account in self.inited_account
 
-    async def execution_stop(self, base_account: BaseAccount, scene: Selector | str, message: Message | None = None) -> bool:
+    async def execution_stop(self, base_account: BaseAccount, scene: Selector | str,
+                             message: Message | None = None) -> bool:
         scene = selector2pattern(scene) if isinstance(scene, Selector) else scene
         land = base_account.route["land"]
         account = base_account.route["account"]
         if land not in self.data:
-            self.add_account(base_account)
+            _ = await self.add_land(land)
             return True
-        elif scene not in self.data[land]:
-            await self.add_scene(scene, land, account)
+        if scene not in self.data[land]:
+            _ = await self.add_scene(scene, land, account)
             return True
-        if message:
-            return (string_to_unique_number(message.id) + int(time.mktime(message.time.timetuple()))) % len(self.data[land][scene]) != self.get_index(base_account, scene)
-        else:
-            return int(time.time()) % len(self.data[land][scene]) != self.get_index(base_account, scene)
-    
+        return (string_to_unique_number(str(self.data[land][scene])) + int(time.mktime(message.time.timetuple()))) % len(self.data[land][scene]) != self.get_index(base_account, scene)
+
+    async def is_bot(self, base_account: BaseAccount, message: Message) -> bool:
+        scene = selector2pattern(message.scene)
+        land = base_account.route["land"]
+        if land not in self.data:
+            _ = await self.add_land(land)
+        if scene not in self.data[land]:
+            _ = await self.add_scene(scene, land, None)
+        sender = message.sender.pattern["member"]
+        if sender in self.data[land][scene]:
+            return True
+        return False
+
 
 class DistributeDataClassCreator(AbstractCreator, ABC):
     targets = (CreateTargetInfo("shared.services.distribute", "DistributeData"),)
@@ -104,6 +117,6 @@ class DistributeDataClassCreator(AbstractCreator, ABC):
     @staticmethod
     def create(create_type: Type[DistributeData]) -> DistributeData:
         return DistributeData()
-    
+
 
 add_creator(DistributeDataClassCreator)

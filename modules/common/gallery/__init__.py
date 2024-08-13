@@ -102,6 +102,7 @@ async def show_galleries(ctx: Context):
     WildcardMatch() @ "gallery_name"
 ))
 async def show_galleries(ctx: Context, gallery_name: MessageChain = ResultValue()):
+    print("get")
     db = get_interface()
     gallery_name = str(gallery_name).strip()
     res = await db.select_all(select(GalleryTriggerWord.keyword).where(GalleryTriggerWord.gallery == gallery_name))

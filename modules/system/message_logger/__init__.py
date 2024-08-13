@@ -1,10 +1,12 @@
 from loguru import logger
 from typing import Literal
 
+from creart import it
 from graia.saya import Channel
 from graiax.shortcut.saya import listen, decorate
 from avilla.core import MessageReceived, Message, MessageSent, Context, Nick, Summary
 
+from shared.models.status import BotStatus
 from shared.utils.control import Distribute
 
 channel = Channel.current()
@@ -63,11 +65,13 @@ async def parse_log(ctx: Context, message: Message, t: Literal["receive", "send"
             
 
 @listen(MessageReceived)
-@decorate(Distribute.distribute())
+@decorate(Distribute.distribute(only_exclusion_bot=True))
 async def message_logger(ctx: Context, message: Message):
+    it(BotStatus).received()
     await parse_log(ctx, message, "receive")
             
 
 @listen(MessageSent)
 async def message_logger(ctx: Context, message: Message):
+    it(BotStatus).sent()
     await parse_log(ctx, message, "send")

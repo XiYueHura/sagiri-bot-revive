@@ -21,6 +21,17 @@ class MiraiApiHttpConfig:
 
 
 @dataclass
+class OnebotV11Account:
+    endpoint: str = field(default_factory=str)
+    access_token: str = field(default_factory=str)
+
+
+@dataclass
+class OnebotV11Config:
+    accounts: list[OnebotV11Account] = field(default_factory=lambda: [asdict(OnebotV11Account())])
+
+
+@dataclass
 class LoggerSetting:
     error_retention: int = 14
     common_retention: int = 7
@@ -43,6 +54,7 @@ class DatabaseSetting:
 class GlobalConfig:
     protocols: list[PROTOCOLS] = field(default_factory=list)
     mirai_api_http: MiraiApiHttpConfig = field(default_factory=MiraiApiHttpConfig)
+    onebot_v11: OnebotV11Config = field(default_factory=OnebotV11Config)
     logger_setting: LoggerSetting = field(default_factory=LoggerSetting)
     database_setting: DatabaseSetting = field(default_factory=DatabaseSetting)
     proxy: str = field(default_factory=str)

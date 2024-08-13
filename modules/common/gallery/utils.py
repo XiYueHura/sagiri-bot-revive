@@ -14,7 +14,7 @@ from avilla.core.resource import RawResource, LocalFileResource
 from shared.utils.control import Permission
 from shared.models.config import GlobalConfig
 from shared.utils.image import get_image_type, get_md5
-from .models import GalleryConfig, GalleryInterval, GallerySwitch
+from .models import GalleryConfig, GalleryInterval, GallerySwitch, Gallery
 
 json_pattern = r"json:([\w\W]+\.)+([\w\W]+)\$"
 url_pattern = r"((http|ftp|https):\/\/)?[\w\-_]+(\.[\w\-_]+)+([\w\-\.,@?^=%&:/~\+#]*[\w\-\@?^=%&/~\+#])?"
@@ -83,7 +83,7 @@ async def valid2send(scene: Selector | Mapping[str, str], gallery_name: str) -> 
     return "IntervalError"
 
 
-def gen_cache_path(gallery: str, config: GalleryConfig) -> Path:
+def gen_cache_path(gallery: str, config: Gallery) -> Path:
     base_path = Path(config.path)
     if not base_path.exists():
         if config.cache_path:
