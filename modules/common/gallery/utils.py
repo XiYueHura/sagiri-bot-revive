@@ -1,7 +1,6 @@
 import re
 import random
 import aiohttp
-import hashlib
 from pathlib import Path
 from loguru import logger
 from typing import Mapping, Literal
@@ -34,11 +33,12 @@ def cache_pic(cache_path: Path, raw: bytes):
         logger.success(f"图片已缓存至{save_path.as_posix()}")
 
 
-async def get_image(name: str, config: GalleryConfig) -> Picture | str:
+async def get_image(name: str, config: Gallery) -> Picture | str:
     path = config.path
     proxy = create(GlobalConfig).proxy
     proxy = proxy if config.need_proxy else ""
     cache = config.cache
+    cache_path = None
     if cache:
         cache_path = gen_cache_path(name, config)
     if re.match(json_pattern + url_pattern, path):
@@ -55,14 +55,14 @@ async def get_image(name: str, config: GalleryConfig) -> Picture | str:
                     return "json解析失败！请查看配置路径是否正确或API是否有变动！"
             async with session.get(res, proxy=proxy) as resp:
                 raw = await resp.read()
-                if cache:
+                if cache_path:
                     cache_pic(cache_path, raw)
                 return Picture(RawResource(raw))
     elif re.match(url_pattern, path):
         async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False)) as session:
             async with session.get(path, proxy=proxy) as resp:
                 raw = await resp.read()
-                if cache:
+                if cache_path:
                     cache_pic(cache_path, raw)
                 return Picture(RawResource(raw))
     elif Path(path).exists():

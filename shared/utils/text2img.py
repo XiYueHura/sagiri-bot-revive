@@ -129,7 +129,7 @@ async def template2img(
     page_option: dict | None = None,
     extra_screenshot_option: dict | None = None,
     use_proxy: bool = False,
-    with_footer: bool = True
+    with_footer: bool = False
 ) -> bytes:
     if isinstance(template, str):
         template = Template(template)

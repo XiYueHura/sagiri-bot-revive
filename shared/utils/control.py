@@ -12,11 +12,12 @@ from graia.broadcast.exceptions import ExecutionStop
 from graia.broadcast.builtin.decorators import Depend
 
 from shared.models import PluginData
+from shared.utils.emitter import Emitter
 from shared.database import get_interface
-from shared.utils.models import get_scene, get_user
 from shared.models.permission import PermissionLevel
 from shared.services.distribute import DistributeData
 from shared.database.tables import User, Scene, UserFunctionCalls
+from shared.utils.models import get_scene, get_user, selector2pattern
 
 
 class Permission(object):
@@ -72,14 +73,16 @@ class FunctionCall(object):
 
     @staticmethod
     def record(func_name: str) -> Depend:
-        async def update(message: Message):
+        async def update(message: Message, emitter: Emitter):
+            emitter.emit("control.FunctionCall.record", params={"func_name": func_name})
             sender = message.sender
             user = await get_user(sender)
             await get_interface().add(
                 UserFunctionCalls(
                     uid=user.id,
                     time=datetime.now(),
-                    func_name=func_name
+                    func_name=func_name,
+                    chain_log=str(emitter.uuid)
                 )
             )
         return Depend(update)
@@ -121,7 +124,7 @@ class Distribute(object):
     """用于控制负载均衡的类，不应被实例化"""
     @staticmethod
     def distribute(require_admin: bool = False, only_exclusion_bot: bool = False, show_log: bool = False) -> Depend:
-        async def judge(ctx: Context, message: Message):
+        async def judge(ctx: Context, message: Message, emitter: Emitter):
             base_account = ctx.account
             land = base_account.route["land"]
             account = base_account.route["account"]
@@ -129,15 +132,25 @@ class Distribute(object):
 
             if await distribute_data.is_bot(base_account, message):
                 logger.debug(f"get bot message {message.content} from {message.sender}")
+                emitter.emit(
+                    "control.Distribute.distribute",
+                    f"return because get bot message {message.content} from {message.sender}"
+                )
                 raise ExecutionStop()
 
             if only_exclusion_bot:
+                emitter.emit("control.Distribute.distribute", f"return because only_exclusion_bot")
                 return
 
             if not distribute_data.account_initialized(account):
                 _ = await distribute_data.add_account(base_account)
                 if show_log:
                     logger.warning(f"{account} not initialized")
+                emitter.emit(
+                    "control.Distribute.distribute",
+                    f"{account} not initialized",
+                    {"account": account}
+                )
                 raise ExecutionStop()
             if all([
                 distribute_data.need_distribute(land, message.scene),
@@ -145,7 +158,17 @@ class Distribute(object):
             ]):
                 if show_log:
                     logger.debug(f"{account} stop")
+                emitter.emit(
+                    "control.Distribute.distribute",
+                    "distribute_data.execution_stop",
+                    {"account": account, "scene": selector2pattern(message.scene)}
+                )
                 raise ExecutionStop()
             if show_log:
                 logger.debug(f"{account} keep")
+            emitter.emit(
+                "control.Distribute.distribute",
+                "distribute_data.keep_exec",
+                {"account": account, "scene": selector2pattern(message.scene)}
+            )
         return Depend(judge)

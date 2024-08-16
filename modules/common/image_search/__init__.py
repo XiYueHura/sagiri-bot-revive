@@ -1,9 +1,10 @@
 from graia.saya import Channel
 from graiax.shortcut.saya import listen, decorate, dispatch
+
 from avilla.core import Context, MessageChain, MessageReceived
 
 from shared.models.plugin import PluginMeta
-from shared.utils.emitter import EmitterDispatcher, Emitter
+from shared.utils.emitter import EmitterDispatcher
 from shared.utils.control import FunctionCall, Function, SceneSwitch, Distribute
 
 channel = Channel.current()
@@ -19,7 +20,6 @@ DEFAULT_ECHO = "Hello World by SAGIRI-BOT V5.0.0 powered by Avilla"
 @decorate(FunctionCall.record("echo"))
 @decorate(Distribute.distribute())
 @dispatch(EmitterDispatcher())
-async def hello(ctx: Context, message: MessageChain, emitter: Emitter):
+async def hello(ctx: Context, message: MessageChain):
     if message.startswith("/echo"):
-        emitter.emit(channel.meta["name"] + ".hello", str(message.content))
         await ctx.scene.send_message(DEFAULT_ECHO)

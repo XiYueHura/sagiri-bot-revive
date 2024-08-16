@@ -1,5 +1,7 @@
+from pathlib import Path
+
 from kayaku import config
-from typing import Literal, Optional
+from typing import Literal
 from dataclasses import dataclass, field, asdict
 
 
@@ -35,6 +37,8 @@ class OnebotV11Config:
 class LoggerSetting:
     error_retention: int = 14
     common_retention: int = 7
+    enable_chain_log: bool = False
+    chain_log_path: str = str(Path(__file__).parent.parent.parent / "log")
 
 
 @dataclass

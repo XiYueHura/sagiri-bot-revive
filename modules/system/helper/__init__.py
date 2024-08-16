@@ -15,11 +15,13 @@ from avilla.core import Context, Message, Picture, Selector, MessageReceived, Me
 from shared.models.plugin import PluginMeta
 from shared.utils.text2img import template2img
 from shared.models.plugin_data import PluginData
+from shared.utils.emitter import EmitterDispatcher
 from shared.utils.models import selector2pattern
 from shared.utils.control import (
     Blacklist,
     Function,
-    FunctionCall
+    FunctionCall,
+    Distribute
 )
 
 channel = Channel.current()
@@ -60,6 +62,8 @@ def random_pic(base_path: Path | str) -> str:
 @decorate(Function.require(channel.module))
 @decorate(FunctionCall.record("help"))
 @decorate(Blacklist.enable())
+@dispatch(EmitterDispatcher())
+@decorate(Distribute.distribute())
 @dispatch(Twilight(meta.gen_match()))
 async def helper(ctx: Context, message: Message):
     modules = []
@@ -92,6 +96,8 @@ async def helper(ctx: Context, message: Message):
 @decorate(Function.require(channel.module))
 @decorate(FunctionCall.record("help_detail"))
 @decorate(Blacklist.enable())
+@decorate(Distribute.distribute())
+@dispatch(EmitterDispatcher())
 @dispatch(Twilight(meta.gen_match(), RegexMatch("[0-9]+$") @ "index"))
 async def detail_helper(ctx: Context, message: Message, index: MessageChain = ResultValue()):
     index = int(str(index))

@@ -10,7 +10,8 @@ from avilla.twilight.twilight import Twilight, ArgumentMatch, ArgResult
 from shared.utils.time import sec_format
 from shared.models.status import BotStatus
 from shared.models.plugin import PluginMeta
-from shared.utils.control import Permission, PermissionLevel
+from shared.utils.emitter import EmitterDispatcher
+from shared.utils.control import Permission, PermissionLevel, Distribute
 
 channel = Channel.current()
 meta = PluginMeta.from_path(__file__)
@@ -19,6 +20,8 @@ channel.meta = meta.to_saya_meta()
 
 @listen(MessageReceived)
 @decorate(Permission.require(PermissionLevel.USER))
+@decorate(Distribute.distribute())
+@dispatch(EmitterDispatcher())
 @dispatch(Twilight([
     meta.gen_match(),
     ArgumentMatch("-a", "-all", optional=True, action="store_true") @ "all_info",

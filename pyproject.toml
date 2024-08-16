@@ -40,6 +40,7 @@ dependencies = [
     "matplotlib>=3.9.1.post1",
     "kiwisolver>=1.4.5",
     "avilla-workspace @ git+https://github.com/GraiaProject/Avilla.git",
+    "aiofiles>=24.1.0",
 ]
 requires-python = ">=3.10"
 readme = "README.md"

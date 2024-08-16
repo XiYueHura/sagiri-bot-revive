@@ -4,19 +4,21 @@ from launart import Launart
 from graia.saya import Channel
 from avilla.core import MessageReceived, Message
 from avilla.twilight.util import _to_mapping_str
-from graiax.shortcut.saya import listen, decorate
+from graiax.shortcut.saya import listen, decorate, dispatch
 
 from .utils import seg_content
 from shared.utils.models import get_user
 from shared.utils.control import Distribute
 from shared.database.tables import ChatRecord
 from shared.database.interface import Database
+from shared.utils.emitter import EmitterDispatcher
 
 channel = Channel.current()
 
 
 @listen(MessageReceived)
 @decorate(Distribute.distribute(only_exclusion_bot=True))
+@dispatch(EmitterDispatcher())
 async def chat_recorder(message: Message):
     db = Launart.current().get_interface(Database)
     user = await get_user(message.sender)

@@ -30,9 +30,10 @@ from avilla.core.resource import RawResource
 from avilla.core.elements import Picture, Text
 from avilla.core import Context, MessageReceived
 from graiax.text2img.playwright import PageOption
-from graiax.shortcut.saya import listen, decorate
+from graiax.shortcut.saya import listen, decorate, dispatch
 
 from shared.utils.text2img import template2img
+from shared.utils.emitter import EmitterDispatcher
 from shared.services.aiohttp import AiohttpClientInterface
 from shared.utils.control import SceneSwitch, FunctionCall, Function, Distribute
 
@@ -83,6 +84,7 @@ class VideoInfo:
 @decorate(SceneSwitch.check())
 @decorate(Function.require(channel.module))
 @decorate(FunctionCall.record("bilibili_share_resolver"))
+@dispatch(EmitterDispatcher())
 async def main(ctx: Context, event: MessageReceived):
     message = str(event.message.content)
     p = re.compile(f'({avid_re})|({bvid_re})')

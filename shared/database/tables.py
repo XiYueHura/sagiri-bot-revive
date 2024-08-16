@@ -70,6 +70,7 @@ class UserFunctionCalls(Base):
     uid: Mapped[int] = col(INTEGER(), ForeignKey('user.id'), nullable=False)
     time: Mapped[datetime] = col(DateTime(), nullable=False)
     func_name: Mapped[str] = col(String(), nullable=False)
+    chain_log: Mapped[str] = col(String(), nullable=True)
     
     user = relationship("User", back_populates="user_function_calls", foreign_keys=[uid])
 

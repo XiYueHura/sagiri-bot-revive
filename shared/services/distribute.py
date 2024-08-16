@@ -43,10 +43,12 @@ class DistributeData:
             scene = selector2pattern(scene)
             async with self.lock:
                 if scene in self.data[land]:
-                    self.data[land][scene].append(account)
+                    if account not in self.data[land][scene]:
+                        self.data[land][scene].append(account)
                 else:
                     self.data[land][scene] = [account]
         self.inited_account.add(account)
+        logger.warning(self.data)
         logger.success(f"DistributeData 成功添加账号{account}<{land}>")
 
     async def add_land(self, land: str):
@@ -92,7 +94,7 @@ class DistributeData:
         if scene not in self.data[land]:
             _ = await self.add_scene(scene, land, account)
             return True
-        return (string_to_unique_number(str(self.data[land][scene])) + int(time.mktime(message.time.timetuple()))) % len(self.data[land][scene]) != self.get_index(base_account, scene)
+        return int(time.mktime(message.time.timetuple())) % len(self.data[land][scene]) != self.get_index(base_account, scene)
 
     async def is_bot(self, base_account: BaseAccount, message: Message) -> bool:
         scene = selector2pattern(message.scene)

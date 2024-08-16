@@ -15,4 +15,4 @@ async def seg_content(content: Message | MessageChain | str) -> str:
     elif isinstance(content, MessageChain):
         content = str(content)
     seg = await asyncio.to_thread(jieba.cut, pattern.sub("", content))
-    return "|".join(seg)
+    return "|".join([i for i in seg if i and i != " "])

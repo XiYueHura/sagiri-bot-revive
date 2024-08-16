@@ -5,6 +5,7 @@ from avilla.twilight.twilight import Twilight, WildcardMatch, RegexResult, Argum
 
 from shared.models.plugin import PluginMeta
 from .utils import gen_desc_image, get_wyy_song
+from shared.utils.emitter import EmitterDispatcher
 from shared.utils.control import FunctionCall, Function, SceneSwitch, Distribute
 
 channel = Channel.current()
@@ -19,6 +20,7 @@ DEFAULT_SEND_TYPE = "card"
 @decorate(SceneSwitch.check())
 @decorate(Function.require(channel.module))
 @decorate(FunctionCall.record("music"))
+@dispatch(EmitterDispatcher())
 @dispatch(
     Twilight([
         meta.gen_match(),

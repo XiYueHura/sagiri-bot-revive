@@ -1,0 +1,22 @@
+{
+  "name": "SceneEntranceAuthenticator",
+  "version": "1.0",
+  "display_name": "谷歌验证码入群验证",
+  "authors": [
+    "SAGIRI-kawaii"
+  ],
+  "description": "一个可以生成Google Style验证码并用于入群验证的插件",
+  "usage": [
+    "发送 生成谷歌验证码#{标题}#{图片}' 可以生成验证码预览"
+  ],
+  "example": [
+    "生成谷歌验证码#BUG#{图片}"
+  ],
+  "icon": "",
+  "prefix": [],
+  "triggers": [],
+  "metadata": {
+    "uninstallable": false,
+    "reloadable": true
+  }
+}

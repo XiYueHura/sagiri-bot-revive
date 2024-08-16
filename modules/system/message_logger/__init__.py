@@ -3,11 +3,12 @@ from typing import Literal
 
 from creart import it
 from graia.saya import Channel
-from graiax.shortcut.saya import listen, decorate
+from graiax.shortcut.saya import listen, decorate, dispatch
 from avilla.core import MessageReceived, Message, MessageSent, Context, Nick, Summary
 
 from shared.models.status import BotStatus
 from shared.utils.control import Distribute
+from shared.utils.emitter import EmitterDispatcher
 
 channel = Channel.current()
 
@@ -65,13 +66,14 @@ async def parse_log(ctx: Context, message: Message, t: Literal["receive", "send"
             
 
 @listen(MessageReceived)
-@decorate(Distribute.distribute(only_exclusion_bot=True))
+@decorate(Distribute.distribute())
+@dispatch(EmitterDispatcher())
 async def message_logger(ctx: Context, message: Message):
-    it(BotStatus).received()
+    it(BotStatus).received(message.scene)
     await parse_log(ctx, message, "receive")
             
 
 @listen(MessageSent)
 async def message_logger(ctx: Context, message: Message):
-    it(BotStatus).sent()
+    it(BotStatus).sent(message.scene)
     await parse_log(ctx, message, "send")

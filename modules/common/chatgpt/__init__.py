@@ -8,6 +8,7 @@ from avilla.twilight.twilight import Twilight, WildcardMatch, ResultValue, ArgRe
 from .preset import preset_dict
 from shared.utils.text2img import md2img
 from shared.models.plugin import PluginMeta
+from shared.utils.emitter import EmitterDispatcher
 from .conversation_manager import ConversationManager
 from shared.utils.control import FunctionCall, Function, SceneSwitch, Distribute
 
@@ -18,10 +19,11 @@ manager = ConversationManager()
 
 
 @listen(MessageReceived)
-@decorate(Distribute.distribute())
+@decorate(FunctionCall.record("chat_gpt"))
 @decorate(SceneSwitch.check())
 @decorate(Function.require(channel.module))
-@decorate(FunctionCall.record("chat_gpt"))
+@decorate(Distribute.distribute())
+@dispatch(EmitterDispatcher())
 @dispatch(
     Twilight([
         meta.gen_match(),

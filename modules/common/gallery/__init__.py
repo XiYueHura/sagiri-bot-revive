@@ -13,9 +13,10 @@ from avilla.twilight.twilight import Twilight, FullMatch, RegexMatch, WildcardMa
 
 from shared.database import get_interface
 from shared.models.plugin import PluginMeta
-from shared.utils.image import get_md5, get_image_type
 from .utils import get_image, valid2send, gen_cache_path
+from shared.utils.emitter import EmitterDispatcher, Emitter
 from .models import GalleryConfig, GalleryTriggerWord, GallerySwitch
+from shared.utils.image import get_md5, get_image_type, download_picture
 from shared.utils.control import FunctionCall, Function, SceneSwitch, Permission, PermissionLevel, Distribute
 
 channel = Channel.current()
@@ -34,11 +35,13 @@ RESPONSE_DICT = {
 @decorate(Distribute.distribute())
 @decorate(SceneSwitch.check())
 @decorate(Function.require(channel.module))
-async def keyword_detect(ctx: Context, message: Message):
+@dispatch(EmitterDispatcher())
+async def keyword_detect(ctx: Context, message: Message, emitter: Emitter):
     keyword = str(message.content)
     db = get_interface()
     if name := await db.select_first(select(GalleryTriggerWord.gallery).where(GalleryTriggerWord.keyword == keyword)):
-        await FunctionCall.record("gallery").exec_target.callable(message)
+        emitter.emit("gallery.keyword_detect", "keyword detected", {"keyword": keyword})
+        await FunctionCall.record("gallery").exec_target.callable(message, emitter)
         valid = await valid2send(message.scene, name)
         print(valid)
         if isinstance(valid, str):
@@ -51,6 +54,7 @@ async def keyword_detect(ctx: Context, message: Message):
 @listen(MessageReceived)
 @decorate(Distribute.distribute())
 @decorate(Permission.require(PermissionLevel.USER))
+@dispatch(EmitterDispatcher())
 @dispatch(Twilight([
     FullMatch("添加图库关键词"), 
     FullMatch(DEFAULT_SEPARATOR), 
@@ -73,6 +77,7 @@ async def add_keyword(ctx: Context, gallery_name: MessageChain = ResultValue(), 
 @listen(MessageReceived)
 @decorate(Distribute.distribute())
 @decorate(Permission.require(PermissionLevel.USER))
+@dispatch(EmitterDispatcher())
 @dispatch(Twilight([
     FullMatch("删除图库关键词"), 
     FullMatch(DEFAULT_SEPARATOR), 
@@ -89,6 +94,7 @@ async def delete_keyword(ctx: Context, keyword: MessageChain = ResultValue()):
 
 @listen(MessageReceived)
 @decorate(Distribute.distribute())
+@dispatch(EmitterDispatcher())
 @dispatch(Twilight(FullMatch("查看图库列表")))
 async def show_galleries(ctx: Context):
     await ctx.scene.send_message(f"当前已加载图库：{'、'.join([str(i) for i in create(GalleryConfig).configs.keys()])}")
@@ -96,13 +102,13 @@ async def show_galleries(ctx: Context):
 
 @listen(MessageReceived)
 @decorate(Distribute.distribute())
+@dispatch(EmitterDispatcher())
 @dispatch(Twilight(
     FullMatch("查看图库关键词"),
     FullMatch(DEFAULT_SEPARATOR),
     WildcardMatch() @ "gallery_name"
 ))
 async def show_galleries(ctx: Context, gallery_name: MessageChain = ResultValue()):
-    print("get")
     db = get_interface()
     gallery_name = str(gallery_name).strip()
     res = await db.select_all(select(GalleryTriggerWord.keyword).where(GalleryTriggerWord.gallery == gallery_name))
@@ -112,6 +118,7 @@ async def show_galleries(ctx: Context, gallery_name: MessageChain = ResultValue(
 @listen(MessageReceived)
 @decorate(Distribute.distribute())
 @decorate(Permission.require(PermissionLevel.USER))
+@dispatch(EmitterDispatcher())
 @dispatch(Twilight(
     UnionMatch("打开", "关闭") @ "operation",
     FullMatch("图库"),
@@ -129,6 +136,7 @@ async def modify_gallery_switch(ctx: Context, message: Message, operation: Messa
 @listen(MessageReceived)
 @decorate(Distribute.distribute())
 @decorate(Permission.require(PermissionLevel.USER))
+@dispatch(EmitterDispatcher())
 @dispatch(Twilight([
     FullMatch("添加"),
     RegexMatch(".*") @ "gallery_name",
@@ -144,7 +152,7 @@ async def add_images(ctx: Context, message: Message, gallery_name: MessageChain 
         return await ctx.scene.send_message("图片都没有，保存个鬼哦！")
     base_path = gen_cache_path(gallery_name, gallerys[gallery_name])
     for image in images:
-        raw = await ctx.fetch(image.resource)
+        raw = await download_picture(image)
         img_type = get_image_type(raw)
         if img_type != "Unknown":
             save_path = base_path / f"{get_md5(raw)}.{img_type.lower()}"
@@ -159,6 +167,7 @@ async def add_images(ctx: Context, message: Message, gallery_name: MessageChain 
 @listen(ApplicationReady)
 async def initialize():
     logger.info("正在初始化图库关键词数据")
-    with suppress(IntegrityError):
-        _ = await get_interface().add_many([GalleryTriggerWord(keyword=str(gallery), gallery=str(gallery)) for gallery in create(GalleryConfig).configs])
+    for gallery in create(GalleryConfig).configs:
+        with suppress(IntegrityError):
+            _ = await get_interface().add(GalleryTriggerWord(keyword=str(gallery), gallery=str(gallery)))
     logger.success("图库关键词数据初始化完成")

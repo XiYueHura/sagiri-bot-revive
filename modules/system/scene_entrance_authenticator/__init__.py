@@ -1,4 +1,3 @@
-import re
 import asyncio
 from pathlib import Path
 from loguru import logger
@@ -16,10 +15,11 @@ from avilla.twilight.twilight import Twilight, FullMatch, ElementMatch, ResultVa
 
 from .utils import gen_verification
 from shared.models.plugin import PluginMeta
-from shared.utils.image import get_md5, get_image_type
+from shared.utils.emitter import EmitterDispatcher
 from shared.utils.waiter import MessageWaiter, PictureWaiter
+from shared.utils.image import get_md5, get_image_type, download_picture
 from .models import AuthenticatorConfig, AuthenticatorSwitch, Authenticator
-from shared.utils.control import SceneSwitch, Function, FunctionCall, Permission, PermissionLevel
+from shared.utils.control import SceneSwitch, Function, FunctionCall, Permission, PermissionLevel, Distribute
 
 channel = Channel.current()
 meta = PluginMeta.from_path(__file__)
@@ -33,6 +33,8 @@ authenticator_path.mkdir(parents=True, exist_ok=True)
 @listen(RelationshipCreated)
 @decorate(SceneSwitch.check())
 @decorate(Function.require(channel.module))
+@decorate(Distribute.distribute())
+@dispatch(EmitterDispatcher())
 async def scene_entrance_authenticator(ctx: Context):
     if not create(AuthenticatorSwitch).is_on(ctx.scene):
         return
@@ -66,6 +68,8 @@ async def scene_entrance_authenticator(ctx: Context):
 
 @listen(MessageReceived)
 @decorate(Permission.require(PermissionLevel.USER))
+@decorate(Distribute.distribute())
+@dispatch(EmitterDispatcher())
 @dispatch(Twilight(
     FullMatch("添加验证"),
     FullMatch("#"),
@@ -82,7 +86,7 @@ async def add_image(ctx: Context, message: Message, image: ElementResult, name: 
         image = image[0]
     else:
         image = image.result
-    raw = await ctx.fetch(image.resource)
+    raw = await download_picture(image)
     md5, img_type = get_md5(raw), get_image_type(raw)
     path = authenticator_path / f"{md5}.{img_type}"
     path.write_bytes(raw)
@@ -92,12 +96,18 @@ async def add_image(ctx: Context, message: Message, image: ElementResult, name: 
 
 @listen(MessageReceived)
 @decorate(Permission.require(PermissionLevel.USER))
+@decorate(Distribute.distribute())
+@dispatch(EmitterDispatcher())
 @dispatch(Twilight(
-    FullMatch("atest"),
+    FullMatch("生成谷歌验证码"),
     FullMatch("#"),
+    RegexMatch(".*") @ "title",
+    FullMatch("#"),
+    RegexMatch("\r?\n?\r?"),
     ElementMatch(Picture, optional=True) @ "image"
 ))
-async def test_gen_images(ctx: Context, message: Message, image: ElementResult):
+async def test_gen_images(ctx: Context, message: Message, title: ElementResult, image: ElementResult):
     if image.matched:
-        raw = await ctx.fetch(image.result.resource)
-        await ctx.scene.send_message(Picture(RawResource(await asyncio.to_thread(gen_verification, "test", raw))), reply=message)
+        raw = await download_picture(image.result)
+        title = title.result.content[0].text if title.matched else "title"
+        await ctx.scene.send_message(Picture(RawResource(await asyncio.to_thread(gen_verification, title, raw))), reply=message)
