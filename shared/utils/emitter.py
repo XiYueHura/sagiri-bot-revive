@@ -29,9 +29,9 @@ class EmitterDispatcher(BaseDispatcher):
 class Emitter:
     def __init__(self, entry_point: str):
         self.create_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        base_log_path = Path(create(GlobalConfig).logger_setting.chain_log_path)
+        base_log_path = Path(create(GlobalConfig).logger_setting.chain_log_path) / datetime.now().strftime('%Y-%m-%d')
         base_log_path.mkdir(parents=True, exist_ok=True)
-        self.log_path = base_log_path / datetime.now().strftime('%Y-%m-%d') / f"chain.log"
+        self.log_path = base_log_path / f"chain.log"
         self.entry_point = entry_point
         self.uuid = uuid.uuid4()
         self.chain = []

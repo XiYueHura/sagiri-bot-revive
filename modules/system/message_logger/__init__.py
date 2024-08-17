@@ -63,7 +63,7 @@ async def parse_log(ctx: Context, message: Message, t: Literal["receive", "send"
         else:
             return logger.warning(f"{prefix}尚未完全解析的协议 <{land}> 的消息：{content}")
     logger.info(text + f" 的消息：{content}")
-            
+
 
 @listen(MessageReceived)
 @decorate(Distribute.distribute())
