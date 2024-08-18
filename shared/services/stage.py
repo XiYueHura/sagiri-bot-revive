@@ -1,3 +1,4 @@
+import avilla.core
 from yarl import URL
 from pathlib import Path
 from loguru import logger
@@ -26,6 +27,7 @@ from shared.services.version import UpdaterService
 from shared.services.recevier import DistributeData
 from shared.utils.log import set_logger, print_logo
 from shared.database.service import DatabaseService
+from shared.utils.account import prepare_account_init
 from shared.services.aiohttp import AiohttpClientService
 from shared.services.launch_time import LaunchTimeService
 
@@ -62,6 +64,7 @@ def initialize():
 def prepare():
     initialize_config()
     set_logger()
+    prepare_account_init()
 
 
 def init_saya():
@@ -90,6 +93,8 @@ def init_services():
 def init_avilla():
     config = create(GlobalConfig)
     avilla = Avilla(broadcast=it(Broadcast), launch_manager=launart, record_send=False)
+    for l in avilla.broadcast.listeners:
+        print(l.listening_events)
     for protocal in config.protocols:
         if not (p := PROTOCOL_DICT.get(protocal)):
             logger.warning(f"当前暂不支持{protocal}协议，自动跳过")

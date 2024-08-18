@@ -27,23 +27,25 @@ class Permission(object):
     async def get(cls, pattern: Mapping[str, str] | Selector) -> int:
         res = await get_user(pattern, selectinload(User.user_permission))
         return res.user_permission.level if res else PermissionLevel.DEFAULT.value
-        
+
     @classmethod
     def require(cls, level: int | PermissionLevel, notice: bool = True):
         if isinstance(level, PermissionLevel):
             level = level.value
+
         async def perm_check(ctx: Context, message: Message):
             permission = await cls.get(message.sender)
             if level > permission:
                 if notice:
                     _ = await ctx.scene.send_message(f"权限不足，需要权限级{level}，你的权限为{permission}")
                 raise ExecutionStop()
+
         return Depend(perm_check)
 
 
 class Blacklist(object):
     """用于管理黑名单的类，不应被实例化"""
-        
+
     @classmethod
     def enable(cls):
         async def blacklist_check(message: Message):
@@ -51,6 +53,7 @@ class Blacklist(object):
             if permission == -1:
                 logger.info(f"已屏蔽黑名单用户：{ujson.dumps(dict(message.sender.pattern))}")
                 raise ExecutionStop()
+
         return Depend(blacklist_check)
 
 
@@ -65,6 +68,7 @@ class Anonymous(object):
                 if sender["member"] == 80000000:
                     _ = await ctx.scene.send_message(message_str)
                     raise ExecutionStop()
+
         return Depend(judge)
 
 
@@ -85,6 +89,7 @@ class FunctionCall(object):
                     chain_log=str(emitter.uuid)
                 )
             )
+
         return Depend(update)
 
 
@@ -97,6 +102,7 @@ class SceneSwitch(object):
             scene = await get_scene(message.scene, selectinload(Scene.scene_setting))
             if not scene.scene_setting.switch:
                 raise ExecutionStop()
+
         return Depend(judge)
 
 
@@ -105,10 +111,10 @@ class Function(object):
 
     @staticmethod
     def require(
-        name: str,
-        *,
-        response_administrator: bool = False,
-        notice: bool = False,
+            name: str,
+            *,
+            response_administrator: bool = False,
+            notice: bool = False,
     ) -> Depend:
         async def judge(ctx: Context, message: Message):
             plugin_data = create(PluginData)
@@ -117,11 +123,13 @@ class Function(object):
             if not switch and (notice or plugin_data.is_notice_on(name, message)):
                 _ = await ctx.scene.send_message(f"模组<{name}>已关闭！请联系机器人管理员！")
                 raise ExecutionStop()
+
         return Depend(judge)
 
 
 class Distribute(object):
     """用于控制负载均衡的类，不应被实例化"""
+
     @staticmethod
     def distribute(require_admin: bool = False, only_exclusion_bot: bool = False, show_log: bool = False) -> Depend:
         async def judge(ctx: Context, message: Message, emitter: Emitter):
@@ -171,4 +179,5 @@ class Distribute(object):
                 "distribute_data.keep_exec",
                 {"account": account, "scene": selector2pattern(message.scene)}
             )
+
         return Depend(judge)

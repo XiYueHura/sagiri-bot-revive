@@ -15,3 +15,7 @@ def get_host(land: str) -> list[str | int]:
             p_config = getattr(config, protocol)
             res.append(str(p_config.host))
     return res
+
+
+def prepare_account_init():
+    from shared.services.recevier import account_init

@@ -1,4 +1,6 @@
 import re
+import traceback
+
 from loguru import logger
 from contextlib import suppress
 from sqlalchemy.sql import select
@@ -14,8 +16,8 @@ from avilla.twilight.twilight import Twilight, FullMatch, RegexMatch, WildcardMa
 from shared.database import get_interface
 from shared.models.plugin import PluginMeta
 from .utils import get_image, valid2send, gen_cache_path
-from shared.utils.emitter import EmitterDispatcher, Emitter
 from .models import GalleryConfig, GalleryTriggerWord, GallerySwitch
+from shared.utils.emitter import EmitterDispatcher, Emitter, LogLevel
 from shared.utils.image import get_md5, get_image_type, download_picture
 from shared.utils.control import FunctionCall, Function, SceneSwitch, Permission, PermissionLevel, Distribute
 
@@ -45,10 +47,22 @@ async def keyword_detect(ctx: Context, message: Message, emitter: Emitter):
         valid = await valid2send(message.scene, name)
         print(valid)
         if isinstance(valid, str):
+            emitter.emit("gallery.keyword_detect.valid2send", "process exit", {"valid": valid})
             return await ctx.scene.send_message(RESPONSE_DICT[valid])
         gallerys = create(GalleryConfig, flush=True)
         if gallery := gallerys[name]:
-            await ctx.scene.send_message(await get_image(name, gallery))
+            emitter.emit("gallery.keyword_detect.send_message", "", {"gallery": name})
+            try:
+                await ctx.scene.send_message(await get_image(name, gallery))
+            except Exception as e:
+                emitter.emit(
+                    "gallery.keyword_detect.send_message",
+                    f"get error: {e}",
+                    {"traceback": traceback.format_exc(), "gallery": name}
+                )
+                emitter.set_level(LogLevel.ERROR)
+                logger.error(traceback.format_exc())
+
 
 
 @listen(MessageReceived)

@@ -6,6 +6,7 @@ from dataclasses import dataclass, field, asdict
 
 
 PROTOCOLS = Literal["mirai_api_http", "onebot_v11", "onebot_v12", "telegram", "discord", "qqguild", "red", "kook"]
+LANDS = Literal["qq"]
 
 
 @dataclass
@@ -61,5 +62,6 @@ class GlobalConfig:
     onebot_v11: OnebotV11Config = field(default_factory=OnebotV11Config)
     logger_setting: LoggerSetting = field(default_factory=LoggerSetting)
     database_setting: DatabaseSetting = field(default_factory=DatabaseSetting)
+    owner_dict: dict[str, int] = field(default_factory=dict)
     proxy: str = field(default_factory=str)
     auto_upgrade: bool = field(default=False)
