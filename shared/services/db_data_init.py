@@ -19,7 +19,7 @@ bcc = it(Broadcast)
 
 
 @bcc.receiver(AccountAvailable)
-async def account_init(base_account: BaseAccount):
+async def data_init(base_account: BaseAccount):
     logger.success("AccountAvailable")
     with suppress(InvalidAuthentication):
         await it(DistributeData).add_account(base_account)
