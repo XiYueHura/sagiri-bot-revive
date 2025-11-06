@@ -24,7 +24,7 @@ from shared.models.config import GlobalConfig
 from shared.utils.config import initialize_config
 from shared.services.alembic import AlembicService
 from shared.services.version import UpdaterService
-from shared.services.recevier import DistributeData
+from shared.services.db_data_init import DistributeData
 from shared.utils.log import set_logger, print_logo
 from shared.database.service import DatabaseService
 from shared.utils.account import prepare_account_init
