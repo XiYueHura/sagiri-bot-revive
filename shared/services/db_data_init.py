@@ -17,6 +17,13 @@ from shared.database.tables import PermissionLevel, UserPermission, User
 
 bcc = it(Broadcast)
 
+# 添加缺失的 account_init 函数，供 account.py 导入
+def account_init():
+    """初始化账户数据"""
+    logger.info("账户初始化函数被调用")
+    # 这里可以根据需要添加初始化逻辑，或者保持为空
+    # 注意：主要的初始化逻辑已经在 data_init 事件处理器中实现
+
 
 @bcc.receiver(AccountAvailable)
 async def data_init(base_account: BaseAccount):

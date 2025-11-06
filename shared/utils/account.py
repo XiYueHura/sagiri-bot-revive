@@ -18,4 +18,4 @@ def get_host(land: str) -> list[str | int]:
 
 
 def prepare_account_init():
-    from shared.services.recevier import account_init
+    from shared.services.db_data_init import account_init
